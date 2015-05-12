@@ -107,7 +107,7 @@
 
         internal static bool WasSuccessful(this ManagementBaseObject invokedMethodResult)
         {
-            return (UInt16)invokedMethodResult["ReturnValue"] == 0;
+            return ((UInt32)invokedMethodResult["ReturnValue"]) == 0;
         }
 
         internal static ManagementObject GetCompletedJob(this ManagementBaseObject invokedMethodResult)
@@ -135,7 +135,7 @@
 
         internal static bool IsJob(this ManagementBaseObject invokedMethodResult)
         {
-            return (UInt16)invokedMethodResult["ReturnValue"] == 4096;
+            return (UInt32)invokedMethodResult["ReturnValue"] == 4096;
         }
 
         internal static void SetVhd(this ManagementScope scope, string vmIdentity, string vhdFilepath)
