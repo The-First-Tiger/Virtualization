@@ -38,7 +38,7 @@
             var defaultRessourcePoolForSyntheticEthernetPorts = scope.GetDefaultRessourcePoolForSyntheticEthernetPorts();
             var allocationSettingData = defaultRessourcePoolForSyntheticEthernetPorts.GetAllocationSettingDataFromDefaultRessourcePool();
 
-            allocationSettingData["VirtualSystemIdentifiers"] = new [] { Guid.NewGuid().ToString("B") };
+            allocationSettingData["VirtualSystemIdentifiers"] = new[] { Guid.NewGuid().ToString("B") };
             allocationSettingData["ElementName"] = "Network Adapter";
             allocationSettingData["StaticMacAddress"] = false;
             allocationSettingData.Put();
@@ -57,7 +57,7 @@
             var virtualSwitch = scope.GetVirtualSwitch(switchName);
 
             ethernetPortAllocationSettingData["Parent"] = syntheticEthernetPortSettingsData;
-            ethernetPortAllocationSettingData["HostResource"] = new [] { virtualSwitch };
+            ethernetPortAllocationSettingData["HostResource"] = new[] { virtualSwitch };
 
             scope.AddResourceSettings(virtualSystemSettingData, ethernetPortAllocationSettingData);
         }
@@ -69,80 +69,17 @@
             var inParameters = virtualMachine.GetMethodParameters("RequestStateChange");
 
             inParameters["RequestedState"] = (UInt16)VirtualMachineStates.Enabled;
-            
+
             var outParameters = virtualMachine.InvokeMethod("RequestStateChange", inParameters, null);
 
-            outParameters.HandleResult();            
-        }
-
-        internal static void HandleResult(this ManagementBaseObject invokedMethodResult)
-        {
-            if (!invokedMethodResult.WasSuccessful() && !invokedMethodResult.IsJob())
-            {
-                throw new InvalidOperationException("Could not execute!");
-            }
-
-            if (!invokedMethodResult.IsJob())
-            {
-                return;
-            }
-
-            var job = invokedMethodResult.GetCompletedJob();
-
-            if (!job.WasJobSuccessful())
-            {
-                throw new InvalidOperationException("Job failed: " + job.GetJobErrorDescription());
-            }
-        }
-
-        internal static string GetJobErrorDescription(this ManagementObject job)
-        {
-            return job["ErrorDescription"].ToString();
-        }
-
-        internal static bool WasJobSuccessful(this ManagementObject job)
-        {
-            return job.GetJobState() == JobStates.Completed;
-        }
-
-        internal static bool WasSuccessful(this ManagementBaseObject invokedMethodResult)
-        {
-            return ((UInt32)invokedMethodResult["ReturnValue"]) == 0;
-        }
-
-        internal static ManagementObject GetCompletedJob(this ManagementBaseObject invokedMethodResult)
-        {
-            var job = invokedMethodResult.GetJob();
-
-            while (job.GetJobState() == JobStates.Starting
-                   || job.GetJobState() == JobStates.Running)
-            {
-                job = invokedMethodResult.GetJob();
-            }
-
-            return job;
-        }
-
-        internal static ManagementObject GetJob(this ManagementBaseObject invokedMethodResult)
-        {
-            return new ManagementObject(invokedMethodResult["Job"].ToString());
-        }
-
-        internal static JobStates GetJobState(this ManagementObject job)
-        {
-            return (JobStates)(UInt16)job["JobState"];
-        }
-
-        internal static bool IsJob(this ManagementBaseObject invokedMethodResult)
-        {
-            return (UInt32)invokedMethodResult["ReturnValue"] == 4096;
+            MethodResult.HandleResult(outParameters);
         }
 
         internal static void SetVhd(this ManagementScope scope, string vmIdentity, string vhdFilepath)
         {
             var virtualMachine = scope.GetVirtualMachine(vmIdentity);
             var virtualSystemSettingData = virtualMachine.GetVirtualSystemSettingData();
-            
+
             var diskDriveResource = scope.GetDiscDriveResource(virtualSystemSettingData);
 
             var allocationSettingData = scope.GetAllocationSettingDataForVirtualHardDisks();
@@ -150,12 +87,12 @@
             allocationSettingData["Parent"] = diskDriveResource;
             allocationSettingData["HostResource"] = new string[] { vhdFilepath };
 
-            scope.AddResourceSettings(virtualSystemSettingData, allocationSettingData);            
+            scope.AddResourceSettings(virtualSystemSettingData, allocationSettingData);
         }
 
         internal static ManagementObject GetDiscDriveResource(this ManagementScope scope, ManagementObject virtualSystemSettingData)
         {
-            var storageAllocationSettingData = scope.GetAllocationSettingDataForSyntheticDiskDrives();
+            var storageAllocationSettingData = scope.GetAllocationSettingDataForSyntheticDisDrives();
 
             var ideController = virtualSystemSettingData.GetIdeController();
 
@@ -181,14 +118,14 @@
         {
             var defaultRessourcePoolForVirtualHardDisks = scope.GetDefaultRessourcePoolForVirtualHardDisks();
 
-            return defaultRessourcePoolForVirtualHardDisks.GetAllocationSettingDataFromDefaultRessourcePool();            
+            return defaultRessourcePoolForVirtualHardDisks.GetAllocationSettingDataFromDefaultRessourcePool();
         }
 
-        internal static ManagementObject GetAllocationSettingDataForSyntheticDiskDrives(this ManagementScope scope)
+        internal static ManagementObject GetAllocationSettingDataForSyntheticDisDrives(this ManagementScope scope)
         {
             var defaultRessourcePoolForSyntheticDiskDrives = scope.GetDefaultRessourcePoolForSyntheticDiskDrives();
 
-            return defaultRessourcePoolForSyntheticDiskDrives.GetAllocationSettingDataFromDefaultRessourcePool();            
+            return defaultRessourcePoolForSyntheticDiskDrives.GetAllocationSettingDataFromDefaultRessourcePool();
         }
 
         internal static void SetDynamicRam(this ManagementScope scope, string vmIdentity, int ramSize = 4096, int? reservation = 1024, int? limit = 8192)
@@ -214,7 +151,7 @@
                 limit = ramSize * 2;
             }
 
-            memorySettingData["DynamicMemoryEnabled"] = true;            
+            memorySettingData["DynamicMemoryEnabled"] = true;
             memorySettingData["Reservation"] = reservation.Value;
             memorySettingData["VirtualQuantity"] = ramSize;
             memorySettingData["Limit"] = limit.Value;
@@ -265,24 +202,9 @@
 
         internal static ManagementBaseObject DefineSystem(this ManagementScope scope)
         {
-            var virtualSystemManagementService = scope.GetVirtualSystemManagementService();
-            var definedSystem = virtualSystemManagementService.InvokeMethod("DefineSystem", virtualSystemManagementService.GetMethodParameters("DefineSystem"), null);
+            var systemManagementService = new VirtualSystemManagementService(scope);
 
-            if (definedSystem == null)
-            {
-                throw new InvalidOperationException("DefineSystem failed");
-            }
-
-            var returnValue = (uint)definedSystem["returnvalue"];
-
-            if (returnValue != 0)
-            {
-                throw new InvalidOperationException("DefineSystem failed");
-            }
-
-            var vmPath = definedSystem["ResultingSystem"] as string;
-
-            return new ManagementObject(vmPath);            
+            return systemManagementService.DefineSystem();
         }
 
         internal static void SetVirtualMachineName(this ManagementScope scope, string name, string vmIdentity)
@@ -301,7 +223,7 @@
 
             var vmIdentity = (string)system["name"];
 
-            scope.SetVirtualMachineName(name, vmIdentity);            
+            scope.SetVirtualMachineName(name, vmIdentity);
 
             return vmIdentity;
         }
@@ -314,7 +236,7 @@
                     x =>
                        (UInt16)x["ResourceType"] == 5
                         && x["ResourceSubType"].ToString().Equals("Microsoft:Hyper-V:Emulated IDE Controller")
-                        && x["Address"].ToString().Equals("0"));        
+                        && x["Address"].ToString().Equals("0"));
         }
 
         internal static ManagementObject GetAllocationSettingData(
@@ -362,7 +284,7 @@
 
         internal static ManagementObject GetDefaultRessourcePoolForSyntheticEthernetPorts(this ManagementScope scope)
         {
-            return scope.GetDefaultRessourcePool("Microsoft:Hyper-V:Synthetic Ethernet Port");           
+            return scope.GetDefaultRessourcePool("Microsoft:Hyper-V:Synthetic Ethernet Port");
         }
 
         internal static ManagementObject GetDefaultRessourcePoolForVirtualHardDisks(this ManagementScope scope)
@@ -372,7 +294,7 @@
 
         internal static ManagementObject GetDefaultRessourcePoolForSyntheticDiskDrives(this ManagementScope scope)
         {
-            return scope.GetDefaultRessourcePool("Microsoft:Hyper-V:Synthetic Disk Drive");            
+            return scope.GetDefaultRessourcePool("Microsoft:Hyper-V:Synthetic Disk Drive");
         }
 
         internal static IEnumerable<ManagementObject> GetRessourcePools(this ManagementScope scope)
@@ -408,7 +330,7 @@
         internal static IEnumerable<string> GetVirtualSwitchNames(this ManagementScope scope)
         {
             return scope.GetVirtualSwitches().Select(s => s["ElementName"].ToString());
-        } 
+        }
 
         internal static IEnumerable<ManagementObject> GetVirtualSwitches(this ManagementScope scope)
         {
@@ -439,7 +361,7 @@
         internal static ManagementObject GetVirtualMachine(this ManagementScope scope, string vmIdentity)
         {
             return scope.GetVirtualMachines().FirstOrDefault(x => x["name"].ToString().Equals(vmIdentity));
-        } 
+        }
 
         internal static IEnumerable<ManagementObject> GetVirtualMachines(this ManagementScope scope)
         {

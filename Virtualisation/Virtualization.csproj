@@ -42,10 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\ManagementExtensions.cs" />
+    <Compile Include="HyperV\Job.cs" />
     <Compile Include="HyperV\JobStates.cs" />
     <Compile Include="HyperV\Management.cs" />
+    <Compile Include="HyperV\MethodResult.cs" />
     <Compile Include="HyperV\VirtualMachine.cs" />
     <Compile Include="HyperV\VirtualMachineStates.cs" />
+    <Compile Include="HyperV\VirtualSystemManagementService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
