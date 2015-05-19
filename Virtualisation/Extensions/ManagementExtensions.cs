@@ -92,7 +92,7 @@
 
         internal static ManagementObject GetDiscDriveResource(this ManagementScope scope, ManagementObject virtualSystemSettingData)
         {
-            var storageAllocationSettingData = scope.GetAllocationSettingDataForSyntheticDisDrives();
+            var storageAllocationSettingData = scope.GetAllocationSettingDataForSyntheticDiskDrives();
 
             var ideController = virtualSystemSettingData.GetIdeController();
 
@@ -121,7 +121,7 @@
             return defaultRessourcePoolForVirtualHardDisks.GetAllocationSettingDataFromDefaultRessourcePool();
         }
 
-        internal static ManagementObject GetAllocationSettingDataForSyntheticDisDrives(this ManagementScope scope)
+        internal static ManagementObject GetAllocationSettingDataForSyntheticDiskDrives(this ManagementScope scope)
         {
             var defaultRessourcePoolForSyntheticDiskDrives = scope.GetDefaultRessourcePoolForSyntheticDiskDrives();
 
