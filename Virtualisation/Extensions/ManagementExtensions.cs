@@ -66,9 +66,21 @@
         {
             var virtualMachine = scope.GetVirtualMachine(vmIdentity);
 
+            virtualMachine.RequestVirtualMachineStateChange(VirtualMachineStates.Enabled);
+        }
+
+        internal static void StopVirtualMachine(this ManagementScope scope, string vmIdentity)
+        {
+            var virtualMachine = scope.GetVirtualMachine(vmIdentity);
+
+            virtualMachine.RequestVirtualMachineStateChange(VirtualMachineStates.Disabled);
+        }
+
+        private static void RequestVirtualMachineStateChange(this ManagementObject virtualMachine, VirtualMachineStates newVirtualMachineState)
+        {
             var inParameters = virtualMachine.GetMethodParameters("RequestStateChange");
 
-            inParameters["RequestedState"] = (UInt16)VirtualMachineStates.Enabled;
+            inParameters["RequestedState"] = (UInt16)newVirtualMachineState;
 
             var outParameters = virtualMachine.InvokeMethod("RequestStateChange", inParameters, null);
 
